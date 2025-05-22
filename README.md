@@ -9,7 +9,7 @@ Proyek ini bertujuan untuk mengekstrak data dari tagihan PLN berbentuk PDF dan m
 - Cek struktur dan validasi data PDF.
 
 ## 📂 Struktur Folder
-
+```bash
 ocr_intern_project/
 ├── app.py # Flask backend
 ├── extract_pln.py # Fungsi ekstraksi PDF
@@ -17,6 +17,7 @@ ocr_intern_project/
 ├── .env # Konfigurasi database
 ├── requirements.txt # Daftar dependensi Python
 └── README.md # Dokumentasi proyek
+```
 
 ## ⚙️ Setup
 ```bash
