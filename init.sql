@@ -33,5 +33,7 @@ CREATE TABLE IF NOT EXISTS tagihan_pln (
     jasa_layanan NUMERIC,
     rec NUMERIC,
     ppn_rec NUMERIC,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (thbl, id_pelanggan, nama_file)
+
 );
