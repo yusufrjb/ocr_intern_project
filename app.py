@@ -7,12 +7,15 @@ from dotenv import load_dotenv
 import pandas as pd
 import numpy as np
 
-load_dotenv()
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env')                                                                                                                                                       
+
+load_dotenv(dotenv_path)  
+
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = './uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
+ 
 @app.route('/')
 def index():
     return "✅ Backend berjalan", 200
@@ -44,11 +47,19 @@ def upload_pdf():
             if not thbl or not id_pel:
                 responses.append({'filename': filename, 'error': 'Data tidak lengkap'})
                 continue
+            
+            # Validasi hasil ekstraksi
+            if thbl in [None, "", "Tidak ditemukan"] or id_pel in [None, "", "Tidak ditemukan"]:
+                responses.append({
+                    'filename': filename,
+                    'error': '[❌] File tidak valid atau tidak sesuai format'
+                })
+                continue
 
             conn = psycopg2.connect(
                 dbname=os.getenv("POSTGRES_DB"),
                 user=os.getenv("POSTGRES_USER"),
-                password=os.getenv("POSTGRES_PASSWORD"),
+                password=os.getenv("POSTGRES_PWD"),
                 host=os.getenv("POSTGRES_HOST"),
                 port=os.getenv("POSTGRES_PORT", 5432)
             )
@@ -64,7 +75,7 @@ def upload_pdf():
                 "Alamat Pelanggan", "Nama Sesuai NPWP", "Alamat Sesuai NPWP", "Status", "Golongan Tarif",
                 "Faktor Kali Meter", "NIK", "Subsidi", "kWh LWBP", "kWh WBP", "kVArh",
                 "Tarif LWBP", "Tarif WBP", "Tarif kVArh", "Jatuh Tempo", "Tunggakan Bulan Sebelumnya",
-                "BP (Biaya Penyambungan)", "UJL (Uang Jaminan Langganan)", "Biaya Beban / EMIN", "Total Tagihan",
+                "BP (Biaya Penyambungan)", "UJL (Uang Jaminan Langganan)", "Angsuran Lainnya", "Biaya Beban / EMIN", "Total Tagihan",
                 "Rupiah TTL Terpakai", "Rupiah Kompensasi", "Rupiah TTL minus Kompensasi", "DPP", "PPN",
                 "PBJT-TL", "Rupiah Jasa Layanan dan Keandalan, sewa trafo, paralel, dll Inc. Tax",
                 "Renewable Energy Certificate", "PPN Renewable Energy Certificate"
@@ -78,7 +89,7 @@ def upload_pdf():
                     alamat_pelanggan, nama_npwp, alamat_npwp, status, golongan_tarif,
                     faktor_kali_meter, nik, subsidi, kwh_lwbp, kwh_wbp, kvarh,
                     tarif_lwbp, tarif_wbp, tarif_kvarh, jatuh_tempo, tunggakan_sebelumnya,
-                    biaya_penyambungan, ujl, biaya_beban, total_tagihan, rupiah_terpakai,
+                    biaya_penyambungan, ujl, angsuran_lain, biaya_beban, total_tagihan, rupiah_terpakai,
                     rupiah_kompensasi, rupiah_setelah_kompensasi, dpp, ppn, pbjt, jasa_layanan,
                     rec, ppn_rec
                 ) VALUES (
@@ -88,11 +99,11 @@ def upload_pdf():
                     %s, %s, %s, %s, %s,
                     %s, %s, %s, %s, %s,
                     %s, %s, %s, %s, %s,
-                    %s, %s, %s
+                    %s, %s, %s, %s
                 )
             """
 
-            values = row[0:34].tolist()
+            values = row[0:35].tolist()
 
             def convert_value(x):
                 if pd.isna(x):
