@@ -42,9 +42,10 @@ def extract_pdf_info_fitz(file_path):
     lines = text.split("\n")
 
     for line in lines:
-        if "Electricity for Better Life" in line:
+        if "electricity for better life" in line.lower().strip():
             break
         extracted_text.append(line)
+
 
     extracted_text_str = "\n".join(extracted_text)
     cleaned_text = extracted_text_str.replace("\n:", "").strip()
@@ -54,7 +55,7 @@ def extract_pdf_info_fitz(file_path):
         "Rekening", "No", "ID Pelanggan", "Nama Pelanggan", "Alamat Pelanggan", "Nama Sesuai NPWP", "Alamat Sesuai NPWP",
         "Status", "Golongan Tarif", "Faktor Kali Meter", "NIK", "Subsidi***", "kWh LWBP", "kWh WBP", "kVArh", "Tarif LWBP",
         "Tarif WBP", "Tarif kVArh", "Jatuh Tempo", "Tunggakan Bulan Sebelumnya", "BP (Biaya Penyambungan)",
-        "UJL (Uang Jaminan Langganan)", "Biaya Beban / EMIN", "Total Tagihan**", "Rupiah TTL Terpakai",
+        "UJL (Uang Jaminan Langganan)", "Angsuran Lainnya", "Biaya Beban / EMIN", "Total Tagihan**", "Rupiah TTL Terpakai",
         "Rupiah Kompensasi****", "Rupiah TTL minus Kompensasi","DPP Nilai Lain", "PPN*****", "PBJT-TL******",
         "dan Keandalan, sewa trafo, paralel, dll Inc. Tax", "Renewable Energy Certificate", "PPN Renewable Energy Certificate)"
     ]
@@ -120,6 +121,8 @@ def extract_pdf_info_fitz(file_path):
         if isinstance(value, str):
             if "/" in value:
                 return value
+            elif value.strip() in ["Tidak ditemukan", "Rp"]:
+                return 0.0
             # Bersihkan string dari simbol Rp dan tanda koma
             cleaned = value.replace("Rp", "").replace(",", "").strip()
             try:
@@ -140,7 +143,7 @@ def extract_pdf_info_fitz(file_path):
         "Nama File", "THBL", "No Rekening", "ID Pelanggan", "Nama Pelanggan", "Alamat Pelanggan", "Nama Sesuai NPWP",
         "Alamat Sesuai NPWP", "Status", "Golongan Tarif", "Faktor Kali Meter", "NIK", "Subsidi",
         "kWh LWBP", "kWh WBP", "kVArh", "Tarif LWBP", "Tarif WBP", "Tarif kVArh", "Jatuh Tempo",
-        "Tunggakan Bulan Sebelumnya", "BP (Biaya Penyambungan)", "UJL (Uang Jaminan Langganan)",
+        "Tunggakan Bulan Sebelumnya", "BP (Biaya Penyambungan)", "UJL (Uang Jaminan Langganan)","Angsuran Lainnya",
         "Biaya Beban / EMIN", "Total Tagihan", "Rupiah TTL Terpakai", "Rupiah Kompensasi",
         "Rupiah TTL minus Kompensasi","DPP", "PPN", "PBJT-TL", "Rupiah Jasa Layanan dan Keandalan, sewa trafo, paralel, dll Inc. Tax",
         "Renewable Energy Certificate", "PPN Renewable Energy Certificate"
@@ -151,8 +154,9 @@ def extract_pdf_info_fitz(file_path):
         values[i + 1] = df.iloc[0, i]
     df = pd.DataFrame([values], columns=new_columns)
     df.at[0, "THBL"] = clean_thbl(df.at[0, "THBL"])
-    df.at[0, "Jatuh Tempo"] = clean_jatuh_tempo(df.at[0, "Jatuh Tempo"])
-    df["DPP"] = df["DPP"].apply(lambda x: 0.0 if x == "Tidak ditemukan" else x)
+    df["Jatuh Tempo"] = pd.to_datetime(df["Jatuh Tempo"].apply(clean_jatuh_tempo), errors='coerce')
+    df[["Angsuran Lainnya", "DPP"]] = df[["Angsuran Lainnya", "DPP"]].replace("Tidak ditemukan", 0.0).astype(float)
+
 
 
     return df
